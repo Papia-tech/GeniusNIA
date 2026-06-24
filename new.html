@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Jarvis HUD - Crimson Edition</title>
+    <style>
+        :root {
+            /* Color scheme permanently locked to the intense pink theme */
+            --hud-color: #ff0051;
+            --hud-glow: rgba(255, 0, 81, 0.45);
+            --bg-base: #0d0205;
+            --panel-bg: rgba(20, 2, 7, 0.4);
+        }
+
+        body {
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-base);
+            background-image:
+                linear-gradient(rgba(255, 0, 81, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 81, 0.12) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+            color: var(--hud-color);
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, monospace;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* CRT scanline overlay */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 3px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .parallax-wrapper {
+            position: relative;
+            width: 96vw;
+            height: 94vh;
+        }
+
+        .widget {
+            position: absolute;
+            padding: 22px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 0, 81, 0.2);
+            box-shadow:
+                inset 0 0 20px rgba(255, 0, 81, 0.05),
+                0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 4px;
+        }
+
+        .widget::before,
+        .widget::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: var(--hud-color);
+            border-style: solid;
+            box-shadow: 0 0 8px var(--hud-glow);
+        }
+
+        .widget::before {
+            top: -2px;
+            left: -2px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .widget::after {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 2px 2px 0;
+        }
+
+        .top-left {
+            top: 0;
+            left: 0;
+            width: 280px;
+        }
+
+        .top-right {
+            top: 0;
+            right: 0;
+            text-align: right;
+            width: 280px;
+        }
+
+        .bottom-left {
+            bottom: 0;
+            left: 0;
+            width: 400px;
+        }
+
+        .bottom-right {
+            bottom: 0;
+            right: 0;
+            width: 300px;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        /* === Center Core Container === */
+        .center-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ring-container {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Layer 1: Base Grid Elements */
+        .ring-crosshair {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 10px dashed rgba(255, 0, 81, 0.15);
+            border-radius: 50%;
+            animation: spinClockwise 60s linear infinite;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Layer 2: Main Mechanical Vector Arcs */
+        .ring-outer-bolts {
+            position: absolute;
+            width: 86%;
+            height: 86%;
+            border: 3px double var(--hud-color);
+            border-radius: 50%;
+            border-top-color: transparent;
+            border-bottom-color: transparent;
+            filter: drop-shadow(0 0 8px var(--hud-glow));
+            animation: spinCounterClockwise 20s linear infinite;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Layer 3: Tech Segment Overlays */
+        .ring-mid-segments {
+            position: absolute;
+            width: 68%;
+            height: 68%;
+            border: 4px dashed var(--hud-color);
+            border-radius: 50%;
+            border-left-color: transparent;
+            opacity: 0.8;
+            animation: spinClockwise 8s cubic-bezier(0.4, 0.1, 0.2, 1) infinite;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Layer 4: Primary Solid Central Reactor */
+        .ring-core-solid {
+            position: absolute;
+            width: 44%;
+            height: 44%;
+            border: 2px solid var(--hud-color);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 0, 81, 0.15) 0%, transparent 75%);
+            box-shadow: inset 0 0 25px var(--hud-glow), 0 0 35px var(--hud-glow);
+            animation: breathCore 3s ease-in-out infinite alternate;
+            z-index: 5;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Layer 5: Concentric Echo Rings hidden by default (Activated on Listening Mode) */
+        .listening-wave-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .wave-pulse {
+            position: absolute;
+            width: 44%;
+            height: 44%;
+            border: 2px solid var(--hud-color);
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 20px var(--hud-glow);
+        }
+
+        .status-header {
+            margin-top: 35px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            text-align: center;
+            text-shadow: 0 0 12px var(--hud-glow);
+        }
+
+        /* === Dynamic Sound Waves Layout === */
+        .spectrum-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 50px;
+            margin-top: 15px;
+        }
+
+        .spectrum-bar {
+            width: 5px;
+            background-color: var(--hud-color);
+            box-shadow: 0 0 6px var(--hud-glow);
+            height: 15%;
+            border-radius: 1px;
+            animation: audioBounce 1s ease-in-out infinite alternate;
+        }
+
+        .spectrum-bar:nth-child(even) {
+            animation-duration: 0.7s;
+        }
+
+        .spectrum-bar:nth-child(3n) {
+            animation-duration: 1.2s;
+        }
+
+        .spectrum-bar:nth-child(5n) {
+            animation-duration: 0.9s;
+        }
+
+        /* === Structural State Overrides === */
+
+        /* STATE: LISTENING - Concentric Soundwaves expand outward from the core */
+        body.listening .wave-pulse:nth-child(1) {
+            animation: rippleOut 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+        }
+
+        body.listening .wave-pulse:nth-child(2) {
+            animation: rippleOut 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+            animation-delay: 0.6s;
+        }
+
+        body.listening .wave-pulse:nth-child(3) {
+            animation: rippleOut 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+            animation-delay: 1.2s;
+        }
+
+        body.listening .ring-outer-bolts {
+            animation-duration: 6s;
+        }
+
+        /* STATE: TALKING - Reconstruction into distinct, physical uneven jumping rows.
+           Uses advanced CSS pseudo structural trees to get isolated bar gaps and distinct velocities without breaking raw HTML tags.
+        */
+        body.talking .ring-container {
+            width: 260px;
+            height: 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.talking .ring-crosshair {
+            display: none;
+            /* Strip out basic round guides */
+        }
+
+        /* Repurposed Ring Containers mapped into real distinct independent vertical lines */
+        body.talking .ring-outer-bolts,
+        body.talking .ring-mid-segments,
+        body.talking .ring-core-solid {
+            position: relative;
+            border: none !important;
+            background: none !important;
+            box-shadow: none !important;
+            animation: none !important;
+            width: 75px;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            filter: drop-shadow(0 0 8px var(--hud-color));
+            opacity: 1;
+        }
+
+        body.talking .ring-outer-bolts::before,
+        body.talking .ring-outer-bolts::after,
+        body.talking .ring-mid-segments::before,
+        body.talking .ring-mid-segments::after,
+        body.talking .ring-core-solid::before,
+        body.talking .ring-core-solid::after,
+        body.talking .ring-container::before,
+        body.talking .ring-container::after {
+            content: '';
+            width: 10px;
+            /* Precise broad bar widths */
+            background-color: var(--hud-color);
+            border-radius: 1px;
+            height: 12px;
+            transform-origin: center;
+        }
+
+        /* Distribute the pseudo blocks across the flex axis layout dynamically */
+        body.talking .ring-container::before {
+            order: 1;
+            animation: jumpBarA 0.31s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-outer-bolts::before {
+            animation: jumpBarB 0.44s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-outer-bolts::after {
+            animation: jumpBarC 0.25s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-mid-segments::before {
+            animation: jumpBarD 0.38s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-mid-segments::after {
+            animation: jumpBarE 0.49s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-core-solid::before {
+            animation: jumpBarF 0.29s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-core-solid::after {
+            animation: jumpBarG 0.41s ease-in-out infinite alternate;
+        }
+
+        body.talking .ring-container::after {
+            order: 8;
+            animation: jumpBarH 0.34s ease-in-out infinite alternate;
+        }
+
+        /* STATE: THINKING - Jittery, intense structural compute cycle processing */
+        body.thinking .ring-outer-bolts {
+            animation: spinClockwise 1.5s linear infinite;
+        }
+
+        body.thinking .ring-mid-segments {
+            animation: spinCounterClockwise 3s linear infinite;
+        }
+
+        body.thinking .ring-core-solid {
+            animation: coreVibrate 0.12s linear infinite;
+        }
+
+        /* === Animation Keyframes === */
+        @keyframes spinClockwise {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinCounterClockwise {
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+
+        @keyframes breathCore {
+            0% {
+                transform: scale(0.94);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.06);
+                opacity: 1;
+            }
+        }
+
+        @keyframes coreVibrate {
+            0% {
+                transform: scale(1) translate(1px, 1px);
+            }
+
+            50% {
+                transform: scale(1.04) translate(-1px, -1px);
+            }
+
+            100% {
+                transform: scale(1) translate(1px, -1px);
+            }
+        }
+
+        @keyframes audioBounce {
+            0% {
+                height: 10%;
+                filter: opacity(0.5);
+            }
+
+            100% {
+                height: 100%;
+                filter: opacity(1);
+            }
+        }
+
+        @keyframes rippleOut {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+                border-width: 3px;
+            }
+
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+                border-width: 1px;
+            }
+        }
+
+        /* Completely unique heights and timing offsets directly replicating the uploaded video stream behavior */
+        @keyframes jumpBarA {
+            0% {
+                height: 10px;
+            }
+
+            100% {
+                height: 75px;
+            }
+        }
+
+        @keyframes jumpBarB {
+            0% {
+                height: 14px;
+            }
+
+            100% {
+                height: 40px;
+            }
+        }
+
+        @keyframes jumpBarC {
+            0% {
+                height: 18px;
+            }
+
+            100% {
+                height: 95px;
+            }
+        }
+
+        @keyframes jumpBarD {
+            0% {
+                height: 16px;
+            }
+
+            100% {
+                height: 30px;
+            }
+        }
+
+        @keyframes jumpBarE {
+            0% {
+                height: 12px;
+            }
+
+            100% {
+                height: 82px;
+            }
+        }
+
+        @keyframes jumpBarF {
+            0% {
+                height: 15px;
+            }
+
+            100% {
+                height: 55px;
+            }
+        }
+
+        @keyframes jumpBarG {
+            0% {
+                height: 18px;
+            }
+
+            100% {
+                height: 95px;
+            }
+        }
+
+        @keyframes jumpBarH {
+            0% {
+                height: 10px;
+            }
+
+            100% {
+                height: 48px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="parallax-wrapper" id="hud-frame">
+
+        <div class="widget top-left">
+            <div class="label">// SYSTEM METRIC</div>
+            <div class="data-value" style="font-weight: 700; margin-bottom: 8px;">JARVIS_MAIN_v10.4</div>
+            <div><span class="label">SECURE_LINK:</span> <span style="color:#fff;">ACTIVE</span></div>
+            <div><span class="label">SYS_SENSORS:</span> NOMINAL</div>
+        </div>
+
+        <div class="widget top-right" id="date-time"></div>
+
+        <div class="center-core">
+            <div class="ring-container">
+                <div class="ring-crosshair"></div>
+                <div class="ring-outer-bolts"></div>
+                <div class="ring-mid-segments"></div>
+                <div class="ring-core-solid"></div>
+
+                <div class="listening-wave-container">
+                    <div class="wave-pulse"></div>
+                    <div class="wave-pulse"></div>
+                    <div class="wave-pulse"></div>
+                </div>
+            </div>
+            <div class="status-header" id="status">INTERFACE IDLE</div>
+        </div>
+
+        <div class="widget bottom-left">
+            <div class="label">// TELEMETRY DEEP STREAM</div>
+            <div id="ai-thoughts"
+                style="font-size: 0.75rem; line-height: 1.6; margin-top: 6px; height: 60px; overflow: hidden; font-family: monospace;">
+                <div><span style="opacity:0.4;">></span> ENGINE CONTEXT INITIALIZED...</div>
+                <div><span style="opacity:0.4;">></span> STANDBY FOR VOICE ARBITRATION.</div>
+            </div>
+            <div class="spectrum-container">
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+                <div class="spectrum-bar"></div>
+            </div>
+        </div>
+
+        <div class="widget bottom-right">
+            <div class="label">// QUANTUM PROCESSING ALLOCATION</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <span class="label">Battery:</span>
+                <span class="data-value" id="cpu-allocation" style="font-size: 0.95rem;">14.2%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span class="label">RAM VALUE:</span>
+                <span class="data-value" id="ram-allocation" style="font-size: 0.95rem;">-- GB</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span class="label">NET_SPEED:</span>
+                <span class="data-value" id="ping-value" style="font-size: 0.95rem;">-- Mbps</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const body = document.body;
+        const statusText = document.getElementById('status');
+        const thoughtText = document.getElementById('ai-thoughts');
+        const cpuText = document.getElementById('cpu-allocation');
+        const pingText = document.getElementById('ping-value');
+
+        function runClock() {
+            const d = new Date();
+            const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+            document.getElementById('date-time').innerHTML = `<div class="data-value" style="font-size: 1.4rem; font-weight: 700;">${timeStr}</div><div class="label" style="margin-top:2px;">${dateStr}</div>`;
+        }
+
+        // === ACTUAL BATTERY STATUS API ===
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                // Function to update the HUD interface
+                const updateBatteryHUD = () => {
+                    const percentage = Math.round(battery.level * 100) + "%";
+
+                    // Choose a Font Awesome icon when charging vs discharging
+                    // adding a custom glow filter style to match your HUD
+                    const chargingIcon = battery.charging
+                        ? `<i class="fa-solid fa-bolt" style="margin-left: 6px; filter: drop-shadow(0 0 5px var(--hud-color));"></i>`
+                        : `<i class="fa-solid fa-battery-three-quarters" style="margin-left: 6px; opacity: 0.7;"></i>`;
+
+                    // Crucial: Use innerHTML instead of innerText so the HTML <i> tag renders
+                    cpuText.innerHTML = percentage + chargingIcon;
+                };
+
+                // Initialize immediately
+                updateBatteryHUD();
+
+                // Listen for real-time battery changes
+                battery.onlevelchange = () => updateBatteryHUD();
+                battery.onchargingchange = () => updateBatteryHUD();
+            });
+        } else {
+            // Fallback if the browser doesn't support the API
+            cpuText.innerText = "UNSUPPORTED";
+        }
+        setInterval(runClock, 1000);
+        runClock();
+
+        // Core WebSocket Architecture Connection
+        const socket = new WebSocket('ws://localhost:8765');
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            if (data.state) {
+                body.className = ''; // Wipe old state layout hooks
+                if (data.state !== 'idle') body.classList.add(data.state);
+                statusText.innerText = data.state === 'idle' ? 'INTERFACE IDLE' : data.state.toUpperCase();
+            }
+
+            if (data.message) {
+                const feedLine = document.createElement('div');
+                feedLine.innerHTML = `<span style="opacity:0.4;">></span> ${data.message.toUpperCase()}`;
+                thoughtText.appendChild(feedLine);
+                if (thoughtText.childNodes.length > 3) { thoughtText.removeChild(thoughtText.firstChild); }
+            }
+        };
+
+        socket.onclose = () => {
+            statusText.innerText = "CORE DISCONNECTED";
+        };
+
+        // --- Visual Loop Simulator (Uncomment line below to preview animations autonomously) ---
+        let cycleIdx = 0;
+        const availableStates = ['idle', 'listening', 'talking', 'thinking'];
+        function runDemoCycle() {
+            cycleIdx = (cycleIdx + 1) % availableStates.length;
+            const targetState = availableStates[cycleIdx];
+            body.className = targetState === 'idle' ? '' : targetState;
+            statusText.innerText = targetState === 'idle' ? 'INTERFACE IDLE' : targetState.toUpperCase();
+
+            const feedLine = document.createElement('div');
+            feedLine.innerHTML = `<span style="opacity:0.4;">></span> ANIMATION ENGINE: [${targetState.toUpperCase()}]`;
+            thoughtText.appendChild(feedLine);
+            if (thoughtText.childNodes.length > 3) { thoughtText.removeChild(thoughtText.firstChild); }
+        }
+        setInterval(runDemoCycle, 4000);
+    </script>
+    <script src="JS/Fetch_Network_Speed.js"></script>
+    <script src="JS/Disable_RightClick.js"></script>
+
+</body>
+
+</html>
