@@ -4,7 +4,7 @@
 
 GeniusNIA is a futuristic personal AI assistant designed for voice interaction, intelligent automation, real-time system monitoring, and immersive human-computer interaction. It combines a modern HUD interface with powerful backend capabilities to create a truly interactive AI experience.
 
-https://github.com/user-attachments/assets/xxxxx
+https://github.com/Papia-tech/GeniusNIA/blob/main/GeniusNIA.mp4
 ---
 
 ## ✨ Features
