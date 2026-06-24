@@ -4,7 +4,7 @@
 
 GeniusNIA is a futuristic personal AI assistant designed for voice interaction, intelligent automation, real-time system monitoring, and immersive human-computer interaction. It combines a modern HUD interface with powerful backend capabilities to create a truly interactive AI experience.
 
-https://github.com/Papia-tech/GeniusNIA/blob/main/GeniusNIA.mp4
+![GeniusNIA Demo](GeniusNIA.gif)
 ---
 
 ## ✨ Features
@@ -124,7 +124,7 @@ Feel free to fork the project and submit pull requests.
 
 ## ✍ Author
 
-Created by Papia Karmakar
+Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Revolving%20Hearts.png" alt="Revolving Hearts" width="25" height="25" /> by Papia
 
 ---
 
